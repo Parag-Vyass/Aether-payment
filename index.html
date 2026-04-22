@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aether Store - Secure Checkout</title>
+  <meta name="description" content="Aether Store secure payment checkout" />
+  <style>
+    :root{
+      --bg1:#f8fafc;
+      --bg2:#eef2ff;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#e5e7eb;
+      --blue:#2962ff;
+      --blue2:#1e4fd6;
+      --green:#047857;
+      --greenbg:#ecfdf3;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      background: linear-gradient(180deg,var(--bg1),var(--bg2));
+      color:var(--text);
+    }
+
+    .page{
+      min-height:100vh;
+      padding-bottom: 18px;
+    }
+
+    .checkout{
+      max-width: 440px;
+      margin: 0 auto;
+      padding: 14px 14px 0;
+      filter: blur(6px);
+      opacity: .78;
+      pointer-events: none;
+      user-select: none;
+      transition: filter .25s ease, opacity .25s ease;
+    }
+
+    .checkout.unlocked{
+      filter:none;
+      opacity:1;
+      pointer-events:auto;
+      user-select:auto;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin: 2px 0 14px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width: 0;
+    }
+
+    .brand-badge{
+      width:42px;
+      height:42px;
+      border-radius:14px;
+      background:#fff;
+      box-shadow: var(--shadow);
+      border:1px solid #edf2f7;
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+      flex:none;
+      position:relative;
+    }
+
+    .brand-badge img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+
+    .logo-fallback{
+      display:none;
+      width:100%;
+      height:100%;
+      place-items:center;
+      font-weight:900;
+      color:#fff;
+      background: linear-gradient(135deg,#1e4fd6,#2962ff);
+      font-size:18px;
+    }
+
+    .brand-badge.fallback .logo-fallback{
+      display:grid;
+    }
+
+    .brand-text{
+      min-width:0;
+    }
+
+    .brand-name{
+      font-weight:800;
+      font-size:17px;
+      line-height:1.05;
+      letter-spacing:-0.01em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .brand-tag{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:3px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .secure-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding:8px 10px;
+      border-radius:999px;
+      background:#ecfdf3;
+      color:var(--green);
+      border:1px solid #bbf7d0;
+      font-size:12px;
+      font-weight:700;
+      white-space:nowrap;
+      flex:none;
+    }
+
+    .hero{
+      background: linear-gradient(135deg,#ffffff 0%,#f8fbff 100%);
+      border:1px solid #e6edf7;
+      box-shadow: var(--shadow);
+      border-radius: 22px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .hero h1{
+      margin:0 0 6px;
+      font-size:18px;
+      line-height:1.25;
+      letter-spacing:-0.02em;
+    }
+
+    .hero p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.55;
+    }
+
+    .chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 10px;
+      border-radius:999px;
+      background:#f8fbff;
+      border:1px solid #dbe4ff;
+      color:#1d4ed8;
+      font-size:12px;
+      font-weight:700;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid #e7eaf0;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:16px;
+      margin-bottom:14px;
+    }
+
+    .section-title{
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.08em;
+      color:#334155;
+      text-transform:uppercase;
+      margin:0 0 12px;
+    }
+
+    .product-name{
+      font-size:16px;
+      font-weight:800;
+      line-height:1.35;
+      margin:0 0 8px;
+      letter-spacing:-0.01em;
+    }
+
+    .mini-row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      margin: 8px 0;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .amount{
+      font-size:30px;
+      font-weight:900;
+      letter-spacing:-0.04em;
+      color:var(--text);
+      margin-top:6px;
+    }
+
+    .refbox{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-top:12px;
+      padding:12px;
+      background:#f8fafc;
+      border:1px dashed #d6dbe6;
+      border-radius:14px;
+    }
+
+    .ref-label{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.2;
+    }
+
+    .ref-value{
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:.02em;
+      color:#111827;
+      text-align:right;
+      word-break:break-all;
+    }
+
+    .methods{
+      display:grid;
+      gap:10px;
+    }
+
+    .method{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:13px 14px;
+      border-radius:14px;
+      border:1px solid #dbe3f0;
+      background:#fafcff;
+    }
+
+    .method.active{
+      border-color:#bfd0ff;
+      background:#eef4ff;
+      box-shadow: inset 0 0 0 1px rgba(41,98,255,.06);
+    }
+
+    .method.disabled{
+      opacity:.45;
+      background:#fbfcfe;
+    }
+
+    .dot{
+      width:16px;
+      height:16px;
+      border-radius:50%;
+      border:2px solid #2962ff;
+      display:grid;
+      place-items:center;
+      flex:none;
+      background:#fff;
+    }
+
+    .dot::after{
+      content:"";
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:#2962ff;
+      display:block;
+    }
+
+    .method.disabled .dot{
+      border-color:#c7cdd8;
+    }
+
+    .method.disabled .dot::after{
+      background:#c7cdd8;
+    }
+
+    .method-meta{
+      flex:1;
+      min-width:0;
+    }
+
+    .method-title{
+      font-weight:800;
+      font-size:14px;
+      line-height:1.2;
+      margin:0;
+    }
+
+    .method-sub{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:2px;
+      line-height:1.35;
+    }
+
+    .badge{
+      font-size:11px;
+      font-weight:900;
+      color:#1d4ed8;
+      background:#e8efff;
+      border-radius:999px;
+      padding:6px 8px;
+      white-space:nowrap;
+      flex:none;
+    }
+
+    .list{
+      margin:0;
+      padding:0;
+      list-style:none;
+      display:grid;
+      gap:10px;
+    }
+
+    .list li{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      font-size:13px;
+      line-height:1.5;
+      color:#374151;
+    }
+
+    .list li::before{
+      content:"";
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:#2962ff;
+      margin-top:6px;
+      flex:none;
+      box-shadow:0 0 0 4px rgba(41,98,255,.08);
+    }
+
+    .trust-grid{
+      display:grid;
+      gap:10px;
+    }
+
+    .trust-item{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      padding:12px 13px;
+      border-radius:14px;
+      background:#f8fafc;
+      border:1px solid #e7eaf0;
+      font-size:13px;
+      line-height:1.45;
+      color:#334155;
+    }
+
+    .trust-ico{
+      width:28px;
+      height:28px;
+      border-radius:10px;
+      background:#eff6ff;
+      color:#1d4ed8;
+      display:grid;
+      place-items:center;
+      font-size:14px;
+      flex:none;
+    }
+
+    .support-grid{
+      display:grid;
+      gap:10px;
+    }
+
+    .support-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:11px 12px;
+      border-radius:14px;
+      background:#f8fafc;
+      border:1px solid #e7eaf0;
+      font-size:13px;
+    }
+
+    .support-row a{
+      color:#1d4ed8;
+      text-decoration:none;
+      font-weight:800;
+      word-break:break-word;
+      text-align:right;
+    }
+
+    .refund{
+      font-size:13px;
+      line-height:1.55;
+      color:#334155;
+      margin:0;
+    }
+
+    .footer-note{
+      text-align:center;
+      color:#64748b;
+      font-size:12px;
+      padding: 4px 0 8px;
+    }
+
+    .cta-wrap{
+      position:sticky;
+      bottom:0;
+      z-index:20;
+      max-width:440px;
+      margin:0 auto;
+      padding: 12px 14px 14px;
+      background: linear-gradient(180deg, rgba(248,250,252,0), rgba(248,250,252,.92) 24%, rgba(248,250,252,1) 100%);
+      backdrop-filter: blur(8px);
+    }
+
+    .pay-btn{
+      width:100%;
+      padding:16px 18px;
+      border:none;
+      border-radius:16px;
+      background: linear-gradient(135deg,var(--blue),var(--blue2));
+      color:#fff;
+      font-weight:900;
+      font-size:16px;
+      box-shadow: 0 12px 24px rgba(41,98,255,.28);
+      cursor:pointer;
+      transition: transform .08s ease, box-shadow .2s ease, opacity .2s ease;
+    }
+
+    .pay-btn:hover{
+      box-shadow: 0 14px 28px rgba(41,98,255,.34);
+    }
+
+    .pay-btn:active{
+      transform: translateY(1px);
+    }
+
+    .microcopy{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      text-align:center;
+      line-height:1.5;
+    }
+
+    .processing{
+      display:none;
+      max-width:440px;
+      margin:0 auto;
+      padding:56px 16px;
+      text-align:center;
+    }
+
+    .spinner{
+      width:42px;
+      height:42px;
+      border-radius:50%;
+      border:4px solid #e5e7eb;
+      border-top-color:#2962ff;
+      animation:spin 1s linear infinite;
+      margin: 18px auto 0;
+    }
+
+    @keyframes spin{
+      to{ transform: rotate(360deg); }
+    }
+
+    .processing h2{
+      font-size:20px;
+      margin: 12px 0 8px;
+      letter-spacing:-0.02em;
+    }
+
+    .processing p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.55;
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      background: rgba(15,23,42,.48);
+      backdrop-filter: blur(8px);
+      z-index:9999;
+    }
+
+    .modal{
+      width:min(100%, 420px);
+      background: rgba(255,255,255,.98);
+      border-radius: 22px;
+      box-shadow: 0 30px 60px rgba(15,23,42,.2);
+      border:1px solid rgba(255,255,255,.7);
+      padding: 20px;
+    }
+
+    .modal-top{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    .modal-icon{
+      width:42px;
+      height:42px;
+      border-radius:14px;
+      background:#eff6ff;
+      color:#1d4ed8;
+      display:grid;
+      place-items:center;
+      font-size:20px;
+      flex:none;
+    }
+
+    .modal h2{
+      margin:0;
+      font-size:18px;
+      letter-spacing:-0.02em;
+    }
+
+    .modal p{
+      margin:6px 0 14px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+    }
+
+    .email-input{
+      width:100%;
+      padding:14px 14px;
+      border:1px solid #dbe3f0;
+      border-radius:14px;
+      outline:none;
+      font-size:15px;
+      background:#fff;
+    }
+
+    .email-input:focus{
+      border-color:#9ab2ff;
+      box-shadow:0 0 0 4px rgba(41,98,255,.08);
+    }
+
+    .unlock-btn{
+      width:100%;
+      margin-top:10px;
+      padding:14px 16px;
+      border:none;
+      border-radius:14px;
+      background: linear-gradient(135deg,var(--blue),var(--blue2));
+      color:#fff;
+      font-weight:900;
+      font-size:15px;
+      cursor:pointer;
+    }
+
+    .modal-foot{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.45;
+    }
+
+    @media (max-width: 380px){
+      .brand-name{ font-size:16px; }
+      .hero h1{ font-size:17px; }
+      .amount{ font-size:28px; }
+      .cta-wrap{ padding-left: 12px; padding-right: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="overlay" id="overlay">
+      <div class="modal">
+        <div class="modal-top">
+          <div class="modal-icon">🔐</div>
+          <div>
+            <h2>Continue to secure checkout</h2>
+            <p>Enter your email to unlock the payment page and receive order support details.</p>
+          </div>
+        </div>
+        <input id="emailInput" class="email-input" type="email" autocomplete="email" placeholder="Enter your email address" />
+        <button class="unlock-btn" id="unlockBtn">Continue</button>
+        <div class="modal-foot">
+          Your checkout will be unlocked after a valid email is entered. This page is designed for GitHub Pages and works without backend code.
+        </div>
+      </div>
+    </div>
+
+    <main class="checkout" id="checkout">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-badge" id="brandBadge">
+            <img src="logo.png" alt="Aether Store logo" id="brandLogo" onerror="this.style.display='none';document.getElementById('brandBadge').classList.add('fallback');" />
+            <span class="logo-fallback">A</span>
+          </div>
+          <div class="brand-text">
+            <div class="brand-name">Aether Store</div>
+            <div class="brand-tag">Fast, secure, mobile-first checkout</div>
+          </div>
+        </div>
+        <div class="secure-pill">🔒 Secure Checkout</div>
+      </div>
+
+      <section class="hero">
+        <h1>Complete your payment securely</h1>
+        <p>
+          Review your order, choose UPI, and complete payment in your banking app. Your order details are linked automatically for support and verification.
+        </p>
+        <div class="chips">
+          <div class="chip">✓ Powered by Aether Store</div>
+          <div class="chip">✓ Encrypted checkout</div>
+          <div class="chip">✓ No hidden charges</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">Order summary</div>
+        <div class="product-name" id="productName">Product</div>
+
+        <div class="mini-row">
+          <span>Order ID</span>
+          <strong id="orderId">1001</strong>
+        </div>
+
+        <div class="mini-row">
+          <span>Reference ID</span>
+          <strong id="referenceId">AST-0000</strong>
+        </div>
+
+        <div class="mini-row" style="margin-top:12px; align-items:flex-end;">
+          <span style="padding-bottom:4px;">Total amount</span>
+        </div>
+        <div class="amount">₹<span id="amount">299.00</span></div>
+
+        <div class="refbox">
+          <div class="ref-label">
+            Order note is prefilled for verification. Please do not change it.
+          </div>
+          <div class="ref-value" id="notePreview">ORDER 1001</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">Payment method</div>
+        <div class="methods">
+          <div class="method active">
+            <div class="dot"></div>
+            <div class="method-meta">
+              <div class="method-title">UPI</div>
+              <div class="method-sub">Recommended for instant payment in your UPI app</div>
+            </div>
+            <div class="badge">ACTIVE</div>
+          </div>
+
+          <div class="method disabled">
+            <div class="dot"></div>
+            <div class="method-meta">
+              <div class="method-title">Cards</div>
+              <div class="method-sub">Coming soon</div>
+            </div>
+          </div>
+
+          <div class="method disabled">
+            <div class="dot"></div>
+            <div class="method-meta">
+              <div class="method-title">Net Banking</div>
+              <div class="method-sub">Coming soon</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">Before you pay</div>
+        <ul class="list">
+          <li>Order ID is already added in the UPI note to help with verification.</li>
+          <li>Your order will be confirmed by email after payment is verified.</li>
+          <li>If you do not receive confirmation, contact support with your Order ID.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">Trust & safety</div>
+        <div class="trust-grid">
+          <div class="trust-item">
+            <div class="trust-ico">🔒</div>
+            <div>100% secure payments with a clean checkout flow.</div>
+          </div>
+          <div class="trust-item">
+            <div class="trust-ico">🛡</div>
+            <div>Verified order mapping using Order ID and payment reference.</div>
+          </div>
+          <div class="trust-item">
+            <div class="trust-ico">✓</div>
+            <div>No hidden charges. The amount shown is the amount requested.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">Support</div>
+        <div class="support-grid">
+          <div class="support-row">
+            <span>Email</span>
+            <a id="supportEmailLink" href="mailto:vparag930@gmail.com">vparag930@gmail.com</a>
+          </div>
+          <div class="support-row">
+            <span>WhatsApp</span>
+            <a id="supportWhatsAppLink" href="https://wa.me/919303362263" target="_blank" rel="noopener">9303362263</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">Refund policy</div>
+        <p class="refund">
+          Refunds are processed only after verifying the payment, Order ID, and transaction details. Requests that do not match a valid payment record will not be accepted. If there is an issue with confirmation, contact support using your Order ID for review.
+        </p>
+      </section>
+
+      <div class="footer-note">Secure • Encrypted • Aether Store</div>
+    </main>
+
+    <div class="cta-wrap">
+      <button class="pay-btn" id="payBtn">Pay Now</button>
+      <div class="microcopy">
+        Your payment note is prefilled automatically. Please do not modify it. After payment verification, confirmation will be sent by email.
+      </div>
+    </div>
+
+    <section class="processing" id="processing">
+      <h2>Processing payment…</h2>
+      <div class="spinner"></div>
+      <p style="margin-top:14px;">Please wait while we open your UPI app and verify the payment flow.</p>
+    </section>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+
+    const orderId = (params.get("order_id") || "1001").trim();
+    const productName = (params.get("product") || "Product").trim();
+    const rawAmount = (params.get("amount") || "299").toString().replace(/[^\d.]/g, "");
+
+    const baseAmount = Number.parseFloat(rawAmount);
+    const safeBaseAmount = Number.isFinite(baseAmount) && baseAmount > 0 ? baseAmount : 299;
+
+    const uniquePaise = Math.floor(Math.random() * 90 + 10) / 100;
+    const amount = (safeBaseAmount + uniquePaise).toFixed(2);
+
+    const cleanOrderId = orderId.replace(/[^a-zA-Z0-9_-]/g, "");
+    const referenceId = `AST-${cleanOrderId || "1001"}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const noteText = `ORDER ${orderId} ${referenceId}`;
+
+    document.getElementById("orderId").textContent = orderId;
+    document.getElementById("productName").textContent = productName;
+    document.getElementById("amount").textContent = amount;
+    document.getElementById("referenceId").textContent = referenceId;
+    document.getElementById("notePreview").textContent = noteText;
+
+    document.getElementById("supportEmailLink").href = `mailto:vparag930@gmail.com?subject=${encodeURIComponent("Payment support - " + orderId)}&body=${encodeURIComponent("Order ID: " + orderId + "\nReference ID: " + referenceId + "\nEmail: ")}`;
+    document.getElementById("supportWhatsAppLink").href = `https://wa.me/919303362263?text=${encodeURIComponent("Hi Aether Store, I need help with Order ID " + orderId + " and Reference ID " + referenceId + ".")}`;
+
+    const upiLink = `upi://pay?pa=9303362263@ybl&pn=Parag%20Vyas&am=${amount}&cu=INR&tn=${encodeURIComponent(noteText)}`;
+
+    const checkout = document.getElementById("checkout");
+    const overlay = document.getElementById("overlay");
+    const emailInput = document.getElementById("emailInput");
+    const unlockBtn = document.getElementById("unlockBtn");
+    const payBtn = document.getElementById("payBtn");
+    const processing = document.getElementById("processing");
+
+    const savedEmail = localStorage.getItem("aether_checkout_email");
+    if (savedEmail) emailInput.value = savedEmail;
+
+    function unlockCheckout() {
+      const email = emailInput.value.trim();
+      const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (!isValid) {
+        alert("Please enter a valid email address.");
+        return;
+      }
+
+      localStorage.setItem("aether_checkout_email", email);
+      overlay.style.display = "none";
+      checkout.classList.add("unlocked");
+      document.querySelector(".cta-wrap").style.opacity = "1";
+    }
+
+    function startPayment() {
+      window.location.href = upiLink;
+
+      setTimeout(() => {
+        checkout.style.display = "none";
+        document.querySelector(".cta-wrap").style.display = "none";
+        processing.style.display = "block";
+      }, 1500);
+    }
+
+    unlockBtn.addEventListener("click", unlockCheckout);
+    emailInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") unlockCheckout();
+    });
+
+    payBtn.addEventListener("click", startPayment);
+  </script>
+</body>
+</html>
